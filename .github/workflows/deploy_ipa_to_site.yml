@@ -24,10 +24,3 @@ jobs:
       run: |
         mkdir -p _data
         python .github/scripts/generate_index.py
-        
-    - name: Deploy to GitHub Pages
-      uses: JamesIves/github-pages-deploy-action@4.1.4
-      with:
-        branch: main
-        folder: .
-        clean: false
