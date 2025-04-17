@@ -3,13 +3,6 @@ name: Deploy IPA/DEB/DYLIB Archive
 on:
   push:
     branches: [ main ]
-    paths:
-      - 'ipa/**'
-      - 'deb/**'
-      - 'dylib/**'
-      - '*.html'
-      - '*.css'
-      - '*.js'
   workflow_dispatch:
 
 jobs:
@@ -19,6 +12,8 @@ jobs:
     steps:
     - name: Checkout repo
       uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
       
     - name: Set up Python
       uses: actions/setup-python@v2
@@ -35,3 +30,4 @@ jobs:
     - name: Generate file index
       run: |
         python .github/scripts/generate_index.py
+        
