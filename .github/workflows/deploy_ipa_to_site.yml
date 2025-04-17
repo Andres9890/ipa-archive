@@ -1,1 +1,33 @@
+name: Deploy IPA Archive
 
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'ipa/**'
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v2
+      
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+        
+    - name: Generate IPA file index
+      run: |
+        mkdir -p _data
+        python .github/scripts/generate_index.py
+        
+    - name: Deploy to GitHub Pages
+      uses: JamesIves/github-pages-deploy-action@4.1.4
+      with:
+        branch: gh-pages
+        folder: .
+        clean: false
