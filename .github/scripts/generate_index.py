@@ -39,20 +39,26 @@ def generate_index():
     
     for directory, extension in directories.items():
         if os.path.exists(directory):
+            print(f"Scanning {directory} directory...")
             for filename in os.listdir(directory):
                 if filename.lower().endswith(extension):
                     file_path = os.path.join(directory, filename)
-                    file_size = get_file_size(file_path)
-                    file_upload_date = get_file_upload_date(file_path)
-                    
-                    all_files.append({
-                        "name": filename,
-                        "size": file_size,
-                        "type": directory,
-                        "modified": datetime.fromtimestamp(os.path.getmtime(file_path)).strftime("%Y-%m-%d %H:%M:%S"),
-                        "uploaded": file_upload_date,
-                        "url": f"{directory}/{filename}"
-                    })
+                    try:
+                        file_size = get_file_size(file_path)
+                        file_upload_date = get_file_upload_date(file_path)
+                        file_mod_time = os.path.getmtime(file_path)
+                        
+                        all_files.append({
+                            "name": filename,
+                            "size": file_size,
+                            "type": directory,
+                            "modified": datetime.fromtimestamp(file_mod_time).strftime("%Y-%m-%d %H:%M:%S"),
+                            "uploaded": file_upload_date,
+                            "url": f"{directory}/{filename}"
+                        })
+                        print(f"  - Added {filename} ({file_size} bytes)")
+                    except Exception as e:
+                        print(f"  - Error processing {filename}: {e}")
     
     all_files.sort(key=lambda x: x["uploaded"], reverse=True)
     
