@@ -9,7 +9,7 @@ async function fetchIPAFiles() {
     const filesList = document.getElementById('filesList');
     
     try {
-        const response = await fetch('https://api.github.com/repos/YOUR_USERNAME/andres99-ipa-archive/contents/ipa');
+        const response = await fetch('https://api.github.com/repos/andres9890/ipa-archive/contents/ipa');
         
         if (!response.ok) {
             throw new Error('Failed to fetch repository contents');
@@ -80,14 +80,11 @@ function filterFiles() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Get the current repository username from the URL
-    const pathParts = window.location.pathname.split('/');
-    const username = pathParts[1] === 'andres99-ipa-archive' ? pathParts[0].replace('/', '') : 'andres99';
+    // For the specific repository andres9890/ipa-archive
+    const apiUrl = 'https://api.github.com/repos/andres9890/ipa-archive/contents/ipa';
     
-    const script = document.querySelector('script').textContent;
-    const updatedScript = script.replace('YOUR_USERNAME', username);
-    
-    const newScript = document.createElement('script');
-    newScript.textContent = updatedScript;
-    document.querySelector('script').replaceWith(newScript);
+    const downloadLinks = document.querySelectorAll('.code-sample');
+    downloadLinks.forEach(link => {
+        link.textContent = link.textContent.replace(/https:\/\/.*\/ipa\//, 'https://andres9890.github.io/ipa-archive/ipa/');
+    });
 });
