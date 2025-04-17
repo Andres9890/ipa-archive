@@ -19,70 +19,48 @@ async function fetchFiles() {
     filesList.innerHTML = '<p class="loading">Loading files...</p>';
     
     try {
-        const [ipaResponse, debResponse, dylibResponse] = await Promise.all([
-            fetch('https://api.github.com/repos/andres9890/ipa-archive/contents/ipa'),
-            fetch('https://api.github.com/repos/andres9890/ipa-archive/contents/deb'),
-            fetch('https://api.github.com/repos/andres9890/ipa-archive/contents/dylib')
-        ]);
+        const indexResponse = await fetch('files_index.json');
         
-        const ipaFiles = ipaResponse.ok ? await ipaResponse.json() : [];
-        const debFiles = debResponse.ok ? await debResponse.json() : [];
-        const dylibFiles = dylibResponse.ok ? await dylibResponse.json() : [];
-        
-        const allFiles = [
-            ...(!Array.isArray(ipaFiles) ? [] : ipaFiles.map(file => ({ ...file, type: 'ipa' }))),
-            ...(!Array.isArray(debFiles) ? [] : debFiles.map(file => ({ ...file, type: 'deb' }))),
-            ...(!Array.isArray(dylibFiles) ? [] : dylibFiles.map(file => ({ ...file, type: 'dylib' })))
-        ];
-        
-        filesList.innerHTML = '';
-        
-        const validFiles = allFiles.filter(file => {
-            const extension = file.name.split('.').pop().toLowerCase();
-            return (file.type === 'ipa' && extension === 'ipa') || 
-                   (file.type === 'deb' && extension === 'deb') || 
-                   (file.type === 'dylib' && extension === 'dylib');
-        });
-        
-        if (validFiles.length === 0) {
-            filesList.innerHTML = '<p class="no-files">No files found, Upload some files to get started!</p>';
+        if (indexResponse.ok) {
+            const indexData = await indexResponse.json();
+            displayFiles(indexData.files);
             return;
         }
         
-        const fileDetails = await Promise.all(
-            validFiles.map(async file => {
-                try {
-                    const response = await fetch(file.url);
-                    const details = await response.json();
+        const directories = ['ipa', 'deb', 'dylib'];
+        let allFiles = [];
+        
+        for (const dir of directories) {
+            try {
+                const response = await fetch(`https://api.github.com/repos/andres9890/ipa-archive/contents/${dir}`);
+                
+                if (response.ok) {
+                    const files = await response.json();
                     
-                    const commitsResponse = await fetch(`https://api.github.com/repos/andres9890/ipa-archive/commits?path=${file.path}`);
-                    const commits = await commitsResponse.json();
-                    
-                    const uploadDate = commits.length > 0 
-                        ? new Date(commits[commits.length - 1].commit.author.date)
-                        : new Date();
-                    
-                    return {
-                        ...file,
-                        size: details.size,
-                        uploadDate: uploadDate
-                    };
-                } catch (error) {
-                    return {
-                        ...file,
-                        size: 0,
-                        uploadDate: new Date()
-                    };
+                    if (Array.isArray(files)) {
+                        const validFiles = files.filter(file => {
+                            const extension = file.name.split('.').pop().toLowerCase();
+                            return extension === dir;
+                        });
+                        
+                        allFiles = allFiles.concat(validFiles.map(file => ({
+                            ...file,
+                            type: dir,
+                            uploadDate: new Date(),
+                            size: file.size || 0
+                        })));
+                    }
                 }
-            })
-        );
+            } catch (error) {
+                console.warn(`Error fetching ${dir} directory:`, error);
+            }
+        }
         
-        fileDetails.sort((a, b) => b.uploadDate - a.uploadDate);
-        
-        fileDetails.forEach(file => {
-            const fileElement = createFileElement(file);
-            filesList.appendChild(fileElement);
-        });
+        if (allFiles.length > 0) {
+            displayFiles(allFiles);
+        } else {
+            filesList.innerHTML = '<p class="no-files">No files found. Upload some files to get started!</p>';
+        }
         
     } catch (error) {
         console.error('Error fetching files:', error);
@@ -94,6 +72,32 @@ async function fetchFiles() {
             </p>
         `;
     }
+}
+
+function displayFiles(files) {
+    const filesList = document.getElementById('filesList');
+    filesList.innerHTML = '';
+    
+    if (files.length === 0) {
+        filesList.innerHTML = '<p class="no-files">No files found. Upload some files to get started!</p>';
+        return;
+    }
+    
+    files.sort((a, b) => {
+        const dateA = new Date(a.uploaded || a.modified || 0);
+        const dateB = new Date(b.uploaded || b.modified || 0);
+        
+        if (dateA.getTime() === dateB.getTime()) {
+            return a.name.localeCompare(b.name);
+        }
+        
+        return dateB - dateA;
+    });
+    
+    files.forEach(file => {
+        const fileElement = createFileElement(file);
+        filesList.appendChild(fileElement);
+    });
 }
 
 function createFileElement(file) {
@@ -108,11 +112,13 @@ function createFileElement(file) {
         ? `${sizeInMB.toFixed(2)} MB` 
         : `${sizeInKB.toFixed(2)} KB`;
     
-    const uploadDate = file.uploadDate.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
-    });
+    const uploadDate = file.uploaded || file.modified
+        ? new Date(file.uploaded || file.modified).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+          })
+        : 'Unknown date';
     
     const downloadUrl = `${file.type}/${file.name}`;
     
@@ -139,6 +145,7 @@ function filterFiles() {
     const fileTypeFilter = activeFilterBtn ? activeFilterBtn.dataset.type : 'all';
     
     const fileItems = document.querySelectorAll('.file-item');
+    let visibleCount = 0;
     
     fileItems.forEach(item => {
         const fileName = item.dataset.filename;
@@ -149,20 +156,22 @@ function filterFiles() {
         
         if (matchesSearch && matchesType) {
             item.style.display = 'block';
+            visibleCount++;
         } else {
             item.style.display = 'none';
         }
     });
     
-    const visibleFiles = document.querySelectorAll('.file-item[style="display: block;"]');
     const noFilesMessage = document.querySelector('.no-files-message');
     
-    if (visibleFiles.length === 0 && !noFilesMessage) {
-        const message = document.createElement('p');
-        message.className = 'no-files no-files-message';
-        message.textContent = 'No files match your search criteria.';
-        document.getElementById('filesList').appendChild(message);
-    } else if (visibleFiles.length > 0 && noFilesMessage) {
+    if (visibleCount === 0) {
+        if (!noFilesMessage) {
+            const message = document.createElement('p');
+            message.className = 'no-files no-files-message';
+            message.textContent = 'No files match your search criteria.';
+            document.getElementById('filesList').appendChild(message);
+        }
+    } else if (noFilesMessage) {
         noFilesMessage.remove();
     }
 }
