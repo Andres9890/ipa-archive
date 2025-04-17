@@ -3,38 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Andres99's IPA Archive</title>
+    <title>AAndres99's IPA/DEB Archive</title>
     <link rel="icon" href="icon/Andres99.ico" type="image/x-icon">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <header>
-        <h1>Andres99's IPA Archive</h1>
-        <p>A repository of IPAs available for download</p>
+        <h1>Andres99's IPA/DEB Archive</h1>
+        <p>A repository of IPAs, DEBs, DYLIBs available for download</p>
     </header>
     
     <main>
-        <div class="search-container">
-            <input type="text" id="searchInput" placeholder="Search for IPA files...">
+        <div class="filter-container">
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Search for files...">
+            </div>
+            <div class="file-type-filter">
+                <button class="filter-btn active" data-type="all">All Files</button>
+                <button class="filter-btn" data-type="ipa">IPA</button>
+                <button class="filter-btn" data-type="deb">DEB</button>
+                <button class="filter-btn" data-type="dylib">DYLIB</button>
+            </div>
         </div>
         
         <div class="files-container">
-            <h2>Available IPAs</h2>
+            <h2>Available Files</h2>
             <div id="filesList" class="files-list">
-                <p class="loading">Loading IPAs...</p>
+                <p class="loading">Loading files...</p>
             </div>
         </div>
         
         <div class="upload-info">
-            <h2>How to Add IPA Files</h2>
-            <p>To add new IPA files to the archive:</p>
+            <h2>How to Add Files</h2>
+            <p>To add new files to the archive:</p>
             <ol>
                 <li>Fork this repository</li>
-                <li>Upload your IPA file to the <code>ipa/</code> directory</li>
+                <li>Upload your file to the appropriate directory:</li>
+                <ul>
+                    <li><code>ipa/</code> for IPAs</li>
+                    <li><code>deb/</code> for DEBs</li>
+                    <li><code>dylib/</code> for DYLIBs</li>
+                </ul>
                 <li>Create a pull request</li>
                 <li>Once merged, the file will automatically appear on this site</li>
             </ol>
-            <p>Direct download link format: <code>https://andres9890.github.io/ipa-archive/ipa/{FILENAME}.ipa</code></p>
+            <p>Direct download link formats:</p>
+            <ul>
+                <li><code>https://andres9890.github.io/ipa-archive/ipa/{FILENAME}.ipa</code></li>
+                <li><code>https://andres9890.github.io/ipa-archive/deb/{FILENAME}.deb</code></li>
+                <li><code>https://andres9890.github.io/ipa-archive/dylib/{FILENAME}.dylib</code></li>
+            </ul>
         </div>
     </main>
     
