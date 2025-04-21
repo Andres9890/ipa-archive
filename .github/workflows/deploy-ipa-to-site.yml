@@ -32,7 +32,7 @@ jobs:
         python .github/scripts/generate_index.py
         
     - name: Upload file index as an artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: file-index
         path: _data/files_index.json
