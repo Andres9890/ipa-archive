@@ -14,6 +14,13 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
+let archiveStats = {
+    total: { count: 0, size: 0 },
+    ipa: { count: 0, size: 0 },
+    deb: { count: 0, size: 0 },
+    dylib: { count: 0, size: 0 }
+};
+
 async function fetchFiles() {
     const filesList = document.getElementById('filesList');
     filesList.innerHTML = '<p class="loading">Loading files...</p>';
@@ -23,6 +30,7 @@ async function fetchFiles() {
         
         if (indexResponse.ok) {
             const indexData = await indexResponse.json();
+            calculateStats(indexData.files);
             displayFiles(indexData.files);
             return;
         }
@@ -57,9 +65,11 @@ async function fetchFiles() {
         }
         
         if (allFiles.length > 0) {
+            calculateStats(allFiles);
             displayFiles(allFiles);
         } else {
             filesList.innerHTML = '<p class="no-files">No files found. Upload some files to get started!</p>';
+            updateStatsDisplay('all');
         }
         
     } catch (error) {
@@ -71,7 +81,53 @@ async function fetchFiles() {
                 Please create the ipa, deb, and dylib directories and add some files to get started.
             </p>
         `;
+        updateStatsDisplay('all');
     }
+}
+
+function calculateStats(files) {
+    archiveStats = {
+        total: { count: 0, size: 0 },
+        ipa: { count: 0, size: 0 },
+        deb: { count: 0, size: 0 },
+        dylib: { count: 0, size: 0 }
+    };
+    
+    files.forEach(file => {
+        const fileType = file.type.toLowerCase();
+        const fileSize = parseInt(file.size) || 0;
+        
+        if (archiveStats[fileType]) {
+            archiveStats[fileType].count++;
+            archiveStats[fileType].size += fileSize;
+        }
+        
+        archiveStats.total.count++;
+        archiveStats.total.size += fileSize;
+    });
+    
+    updateStatsDisplay('all');
+}
+
+function updateStatsDisplay(filterType) {
+    const totalFilesCountElement = document.getElementById('totalFilesCount');
+    const totalArchiveSizeElement = document.getElementById('totalArchiveSize');
+    
+    const stats = filterType === 'all' ? archiveStats.total : archiveStats[filterType] || { count: 0, size: 0 };
+    
+    totalFilesCountElement.textContent = stats.count;
+    totalArchiveSizeElement.textContent = formatFileSize(stats.size);
+}
+
+function formatFileSize(bytes) {
+    if (bytes === 0) return "0 Bytes";
+    
+    const units = ["Bytes", "KB", "MB", "GB", "TB"];
+    const decimals = 2;
+    const k = 1024;
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(decimals)) + " " + units[i];
 }
 
 function displayFiles(files) {
@@ -80,6 +136,7 @@ function displayFiles(files) {
     
     if (files.length === 0) {
         filesList.innerHTML = '<p class="no-files">No files found. Upload some files to get started!</p>';
+        updateStatsDisplay('all');
         return;
     }
     
@@ -143,6 +200,8 @@ function filterFiles() {
     const searchTerm = document.getElementById('searchInput').value.toLowerCase();
     const activeFilterBtn = document.querySelector('.filter-btn.active');
     const fileTypeFilter = activeFilterBtn ? activeFilterBtn.dataset.type : 'all';
+    
+    updateStatsDisplay(fileTypeFilter);
     
     const fileItems = document.querySelectorAll('.file-item');
     let visibleCount = 0;
