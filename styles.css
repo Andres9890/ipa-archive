@@ -69,6 +69,27 @@ header h1 {
     border-color: #2980b9;
 }
 
+.archive-stats {
+    background-color: white;
+    border-radius: 5px;
+    padding: 15px;
+    margin-bottom: 2rem;
+    display: flex;
+    justify-content: space-between;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.stat-item {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    font-size: 1rem;
+}
+
+.stat-item span:first-child {
+    font-weight: bold;
+}
+
 .files-container {
     background-color: white;
     padding: 20px;
@@ -199,5 +220,10 @@ footer {
     
     .file-type-filter {
         justify-content: center;
+    }
+    
+    .archive-stats {
+        flex-direction: column;
+        gap: 10px;
     }
 }
