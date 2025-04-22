@@ -105,20 +105,23 @@ h2 {
 
 .files-list {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 1rem;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
 }
 
 .file-item {
     border: 1px solid #ddd;
     padding: 1rem;
-    border-radius: 5px;
+    border-radius: 8px;
+    background-color: #fff;
     transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
 }
 
 .file-item:hover {
     transform: translateY(-3px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
 }
 
 .file-name {
@@ -167,6 +170,7 @@ h2 {
     border-radius: 4px;
     font-size: 14px;
     transition: background-color 0.2s ease;
+    text-align: center;
 }
 
 .download-btn:hover {
@@ -212,6 +216,61 @@ footer {
     padding: 2rem;
     color: #666;
 }
+.file-item.enhanced {
+    display: flex;
+    flex-direction: column;
+}
+
+.app-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1rem;
+    gap: 0.8rem;
+}
+
+.app-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    object-fit: cover;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.app-title-container {
+    flex: 1;
+}
+
+.app-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0;
+    color: #2c3e50;
+}
+
+.app-version {
+    font-size: 0.8rem;
+    color: #7f8c8d;
+}
+
+.app-info {
+    margin-bottom: 1rem;
+    padding: 0.5rem;
+    background-color: #f8f9fa;
+    border-radius: 6px;
+}
+
+.app-info p {
+    margin-bottom: 0.4rem;
+    font-size: 0.85rem;
+}
+
+.app-info p:last-child {
+    margin-bottom: 0;
+}
+
+.app-info strong {
+    color: #2c3e50;
+}
 
 @media (max-width: 768px) {
     .files-list {
@@ -225,5 +284,10 @@ footer {
     .archive-stats {
         flex-direction: column;
         gap: 10px;
+    }
+    
+    .app-header {
+        flex-direction: column;
+        text-align: center;
     }
 }
