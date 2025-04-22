@@ -21,11 +21,23 @@ let archiveStats = {
     dylib: { count: 0, size: 0 }
 };
 
+let appData = null;
+
 async function fetchFiles() {
     const filesList = document.getElementById('filesList');
     filesList.innerHTML = '<p class="loading">Loading files...</p>';
     
     try {
+        try {
+            const ipaDataResponse = await fetch('_data/ipa_data.json');
+            if (ipaDataResponse.ok) {
+                appData = await ipaDataResponse.json();
+                console.log('Loaded enhanced IPA data:', appData);
+            }
+        } catch (err) {
+            console.warn('Could not load enhanced IPA data:', err);
+        }
+        
         const indexResponse = await fetch('files_index.json');
         
         if (indexResponse.ok) {
@@ -157,17 +169,26 @@ function displayFiles(files) {
     });
 }
 
+function getAppDataForFile(filename) {
+    if (!appData || !appData.apps) {
+        return null;
+    }
+    
+    return appData.apps.find(app => app.filename === filename);
+}
+
 function createFileElement(file) {
     const fileItem = document.createElement('div');
     fileItem.className = 'file-item';
     fileItem.dataset.filename = file.name.toLowerCase();
     fileItem.dataset.filetype = file.type.toLowerCase();
     
+    const enhancedData = file.type === 'ipa' ? getAppDataForFile(file.name) : null;
+    
     const sizeInKB = file.size / 1024;
     const sizeInMB = sizeInKB / 1024;
-    const formattedSize = sizeInMB >= 1 
-        ? `${sizeInMB.toFixed(2)} MB` 
-        : `${sizeInKB.toFixed(2)} KB`;
+    const formattedSize = enhancedData?.size_formatted || 
+        (sizeInMB >= 1 ? `${sizeInMB.toFixed(2)} MB` : `${sizeInKB.toFixed(2)} KB`);
     
     const uploadDate = file.uploaded || file.modified
         ? new Date(file.uploaded || file.modified).toLocaleDateString('en-US', {
@@ -181,16 +202,45 @@ function createFileElement(file) {
     
     const fileTypeLabel = file.type.toUpperCase();
     
+    if (!enhancedData) {
+        fileItem.innerHTML = `
+            <div class="file-name">
+                <span class="file-type-tag file-type-${file.type}">${fileTypeLabel}</span>
+                ${file.name}
+            </div>
+            <div class="file-info">
+                <p>Size: ${formattedSize}</p>
+                <p>Uploaded: ${uploadDate}</p>
+            </div>
+            <a href="${downloadUrl}" class="download-btn" download>Download</a>
+        `;
+        return fileItem;
+    }
+    
+    const appTitle = enhancedData.title || file.name.replace('.ipa', '');
+    const appVersion = enhancedData.version || 'Unknown';
+    const bundleId = enhancedData.bundle_id || 'Unknown';
+    const minOS = enhancedData.min_os || 'Unknown';
+    const platforms = enhancedData.platform_names?.join(', ') || 'Unknown';
+    const iconPath = enhancedData.icon_path || '';
+    
+    fileItem.classList.add('enhanced');
     fileItem.innerHTML = `
-        <div class="file-name">
-            <span class="file-type-tag file-type-${file.type}">${fileTypeLabel}</span>
-            ${file.name}
+        <div class="app-header">
+            ${iconPath ? `<img src="${iconPath}" class="app-icon" alt="${appTitle} icon">` : ''}
+            <div class="app-title-container">
+                <h3 class="app-title">${appTitle}</h3>
+                <span class="app-version">v${appVersion}</span>
+            </div>
         </div>
-        <div class="file-info">
-            <p>Size: ${formattedSize}</p>
-            <p>Uploaded: ${uploadDate}</p>
+        <div class="app-info">
+            <p><strong>Bundle ID:</strong> ${bundleId}</p>
+            <p><strong>Min iOS:</strong> ${minOS}</p>
+            <p><strong>Platforms:</strong> ${platforms}</p>
+            <p><strong>Size:</strong> ${formattedSize}</p>
+            <p><strong>Uploaded:</strong> ${uploadDate}</p>
         </div>
-        <a href="${downloadUrl}" class="download-btn" download>Download</a>
+        <a href="${downloadUrl}" class="download-btn" download>Download IPA</a>
     `;
     
     return fileItem;
@@ -210,7 +260,8 @@ function filterFiles() {
         const fileName = item.dataset.filename;
         const fileType = item.dataset.filetype;
         
-        const matchesSearch = fileName.includes(searchTerm);
+        const matchesSearch = fileName.includes(searchTerm) || 
+                             (item.textContent && item.textContent.toLowerCase().includes(searchTerm));
         const matchesType = fileTypeFilter === 'all' || fileType === fileTypeFilter;
         
         if (matchesSearch && matchesType) {
