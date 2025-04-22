@@ -4,6 +4,9 @@ on:
   push:
     branches: [ main ]
   workflow_dispatch:
+  
+permissions:
+  contents: write
 
 jobs:
   build-and-deploy:
@@ -30,7 +33,7 @@ jobs:
         mkdir -p ipa
         mkdir -p deb
         mkdir -p dylib
-        mkdir -p _data
+        mkdir -p data
         mkdir -p assets/app-icons
         
     - name: Process IPA files
