@@ -36,9 +36,12 @@ jobs:
         mkdir -p _data
         mkdir -p assets/app-icons
         
-    - name: Process IPA files
+    - name: Process IPA files (with debug)
       run: |
+        echo "↪ CWD is $(pwd)"
         python .github/scripts/process_ipa.py
+        echo "↪ After process_ipa.py, _data contains:"
+        ls -R _data || echo "  (empty or missing)"
         
     - name: Generate file index
       run: |
