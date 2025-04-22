@@ -4,30 +4,30 @@ on:
   push:
     branches: [ main ]
   workflow_dispatch:
-  
+
 permissions:
   contents: write
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout repo
       uses: actions/checkout@v2
       with:
         fetch-depth: 0
-      
+
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
         python-version: '3.x'
-    
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install pillow
-        
+
     - name: Create necessary directories
       run: |
         mkdir -p ipa
@@ -35,24 +35,27 @@ jobs:
         mkdir -p dylib
         mkdir -p _data
         mkdir -p assets/app-icons
-        
+
     - name: Process IPA files (with debug)
       run: |
         echo "↪ CWD is $(pwd)"
         python .github/scripts/process_ipa.py
         echo "↪ After process_ipa.py, _data contains:"
         ls -R _data || echo "  (empty or missing)"
-        
-    - name: Generate file index
+
+    - name: Generate file index (with debug)
       run: |
+        echo "↪ CWD is $(pwd)"
         python .github/scripts/generate_index.py
-        
+        echo "↪ After generate_index.py, _data contains:"
+        ls -R _data || echo "  (empty or missing)"
+
     - name: Upload file index as an artifact
       uses: actions/upload-artifact@v4
       with:
         name: file-index
         path: _data/files_index.json
-        
+
     - name: Upload IPA data as an artifact
       uses: actions/upload-artifact@v4
       with:
