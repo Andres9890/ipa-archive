@@ -5,18 +5,19 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     
     steps:
     - name: Checkout repo
-      uses: actions/checkout@v2
-      with:
-        fetch-depth: 0
+      uses: actions/checkout@v3
       
     - name: Set up Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: '3.x'
     
@@ -25,30 +26,825 @@ jobs:
         python -m pip install --upgrade pip
         pip install pillow
         
+    - name: List repository contents before processing
+      run: |
+        echo "Repository contents before processing:"
+        ls -la
+        
     - name: Create necessary directories
       run: |
         mkdir -p ipa
         mkdir -p deb
         mkdir -p dylib
-        mkdir -p _data
+        mkdir -p data
         mkdir -p assets/app-icons
         
-    - name: Process IPA files
+    - name: Process IPA files with modified script
       run: |
-        python .github/scripts/process_ipa.py
+        cat > process_ipa.py << 'EOF'
+#!/usr/bin/env python3
+from pathlib import Path
+import os
+import json
+import zipfile
+import plistlib
+import re
+from PIL import Image
+import sqlite3
+from datetime import datetime
+
+print(f"Current working directory: {os.getcwd()}")
+print(f"Contents of current directory: {os.listdir('.')}")
+
+DATA_DIR = Path("data")
+ASSETS_DIR = Path("assets/app-icons")
+IPA_DIR = Path("ipa")
+DATABASE_PATH = DATA_DIR / "ipa_database.db"
+
+print(f"IPA directory exists: {IPA_DIR.exists()}")
+print(f"IPA directory contents: {list(IPA_DIR.glob('*'))}")
+
+DATA_DIR.mkdir(exist_ok=True)
+ASSETS_DIR.mkdir(exist_ok=True, parents=True)
+
+def init_database():
+    conn = sqlite3.connect(DATABASE_PATH)
+    cursor = conn.cursor()
+    
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS apps (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        filename TEXT UNIQUE,
+        bundle_id TEXT,
+        title TEXT,
+        version TEXT,
+        min_os TEXT,
+        platform INTEGER,
+        size INTEGER,
+        upload_date TEXT,
+        has_icon INTEGER DEFAULT 0
+    )
+    ''')
+    
+    conn.commit()
+    return conn, cursor
+
+def extract_plist_from_ipa(ipa_path):
+    print(f"Extracting plist from: {ipa_path}")
+    try:
+        with zipfile.ZipFile(ipa_path, 'r') as zip_ref:
+            plist_path_pattern = re.compile(r'Payload/[^/]+\.app/Info\.plist')
+            for file in zip_ref.namelist():
+                if plist_path_pattern.match(file):
+                    print(f"Found plist at: {file}")
+                    plist_content = zip_ref.read(file)
+                    try:
+                        return plistlib.loads(plist_content)
+                    except Exception as e:
+                        print(f"Failed to parse plist from {ipa_path}: {e}")
+                        return None
+            print(f"No Info.plist found in {ipa_path}")
+            return None
+    except Exception as e:
+        print(f"Error opening zip file {ipa_path}: {e}")
+        return None
+
+def extract_icon_from_ipa(ipa_path, app_name, icon_names):
+    if not icon_names:
+        return False
+    
+    print(f"Looking for icons in {ipa_path} with app_name={app_name}")
+    
+    try:
+        with zipfile.ZipFile(ipa_path, 'r') as zip_ref:
+            app_dir_pattern = re.compile(r'Payload/([^/]+)\.app/')
+            app_dirs = set()
+            
+            for file in zip_ref.namelist():
+                match = app_dir_pattern.match(file)
+                if match:
+                    app_dirs.add(match.group(1))
+            
+            if not app_dirs:
+                return False
+            
+            if app_name not in app_dirs and app_dirs:
+                app_name = next(iter(app_dirs))
+            
+            try:
+                if 'iTunesArtwork' in zip_ref.namelist():
+                    icon_data = zip_ref.read('iTunesArtwork')
+                    return icon_data
+            except:
+                pass
+            
+            for icon_name in icon_names:
+                possible_paths = [
+                    f"Payload/{app_name}.app/{icon_name}",
+                    f"Payload/{app_name}.app/{icon_name}.png",
+                    f"Payload/{app_name}.app/{icon_name}@2x.png",
+                    f"Payload/{app_name}.app/{icon_name}@3x.png"
+                ]
+                
+                for path in possible_paths:
+                    try:
+                        if path in zip_ref.namelist():
+                            print(f"Found icon at {path}")
+                            icon_data = zip_ref.read(path)
+                            return icon_data
+                    except:
+                        continue
+    except Exception as e:
+        print(f"Error processing icon extraction: {e}")
+    
+    return False
+
+def get_icon_names_from_plist(plist):
+    if not plist:
+        return []
+    
+    icon_names = []
+    
+    if 'CFBundleIcons' in plist:
+        icons_dict = plist['CFBundleIcons']
+        if icons_dict and 'CFBundlePrimaryIcon' in icons_dict:
+            primary_icon = icons_dict['CFBundlePrimaryIcon']
+            if 'CFBundleIconFiles' in primary_icon:
+                icon_names.extend(primary_icon['CFBundleIconFiles'])
+            elif 'CFBundleIconName' in primary_icon:
+                icon_names.append(primary_icon['CFBundleIconName'])
+    
+    if 'CFBundleIcons~ipad' in plist:
+        ipad_icons = plist['CFBundleIcons~ipad']
+        if ipad_icons and 'CFBundlePrimaryIcon' in ipad_icons:
+            primary_icon = ipad_icons['CFBundlePrimaryIcon']
+            if 'CFBundleIconFiles' in primary_icon:
+                icon_names.extend(primary_icon['CFBundleIconFiles'])
+    
+    if 'CFBundleIconFiles' in plist:
+        icon_names.extend(plist['CFBundleIconFiles'])
+    
+    if 'Icon files' in plist:
+        icon_names.extend(plist['Icon files'])
+    
+    if 'CFBundleIconFile' in plist:
+        icon_names.append(plist['CFBundleIconFile'])
+    
+    icon_names.extend(['Icon', 'AppIcon', 'AppIcon60x60'])
+    
+    return list(set(filter(None, icon_names)))
+
+def save_icon(icon_data, filename):
+    if not icon_data:
+        return False
+    
+    icon_path = ASSETS_DIR / f"{filename}.png"
+    print(f"Saving icon to {icon_path}")
+    
+    try:
+        with open(icon_path, 'wb') as f:
+            f.write(icon_data)
+        
+        try:
+            img = Image.open(icon_path)
+            img = img.resize((120, 120), Image.LANCZOS)
+            if img.mode != 'RGB':
+                img = img.convert('RGB')
+            jpg_path = ASSETS_DIR / f"{filename}.jpg"
+            img.save(jpg_path, 'JPEG', quality=85)
+            
+            print(f"Saved optimized icon to {jpg_path}")
+            
+            if os.path.exists(jpg_path):
+                if os.path.exists(icon_path):
+                    os.remove(icon_path)
+                return True
+        except Exception as e:
+            print(f"Error optimizing icon for {filename}: {e}")
+            return os.path.exists(icon_path)
+            
+    except Exception as e:
+        print(f"Error saving icon for {filename}: {e}")
+        return False
+
+def get_platforms_from_plist(plist):
+    if not plist:
+        return 0
+    
+    platforms = 0
+    if 'UIDeviceFamily' in plist:
+        for device in plist['UIDeviceFamily']:
+            platforms |= (1 << int(device))
+    
+    if platforms == 0:
+        platforms = 2
+    
+    return platforms
+
+def process_ipa_file(ipa_path, cursor, conn):
+    filename = os.path.basename(ipa_path)
+    file_size = os.path.getsize(ipa_path)
+    file_stats = os.stat(ipa_path)
+    upload_date = datetime.fromtimestamp(file_stats.st_mtime).isoformat()
+    
+    print(f"\nProcessing IPA: {filename}")
+    
+    cursor.execute("SELECT id FROM apps WHERE filename = ?", (filename,))
+    if cursor.fetchone():
+        print(f"Skipping already processed file: {filename}")
+        return
+    
+    plist = extract_plist_from_ipa(ipa_path)
+    
+    if not plist:
+        print(f"No plist found or could not be parsed for {filename}")
+        cursor.execute(
+            "INSERT INTO apps (filename, size, upload_date) VALUES (?, ?, ?)",
+            (filename, file_size, upload_date)
+        )
+        conn.commit()
+        print(f"Added basic info for {filename} (no plist found)")
+        return
+    
+    print(f"Plist keys found: {list(plist.keys())}")
+    
+    bundle_id = plist.get('CFBundleIdentifier', '')
+    title = plist.get('CFBundleDisplayName') or plist.get('CFBundleName', '')
+    version = plist.get('CFBundleShortVersionString', '')
+    build_version = plist.get('CFBundleVersion', '')
+    
+    print(f"Bundle ID: {bundle_id}")
+    print(f"App Title: {title}")
+    print(f"Version: {version} (build: {build_version})")
+    
+    if version and build_version and version != build_version:
+        version = f"{version} ({build_version})"
+    elif not version and build_version:
+        version = build_version
+    
+    min_os = plist.get('MinimumOSVersion', '')
+    print(f"Minimum OS: {min_os}")
+    
+    platforms = get_platforms_from_plist(plist)
+    print(f"Platforms: {platforms}")
+    
+    icon_names = get_icon_names_from_plist(plist)
+    
+    app_name = os.path.splitext(title)[0] if title else None
+    icon_data = extract_icon_from_ipa(ipa_path, app_name, icon_names)
+    has_icon = save_icon(icon_data, os.path.splitext(filename)[0])
+    print(f"Icon extracted: {has_icon}")
+    
+    cursor.execute(
+        """
+        INSERT INTO apps 
+        (filename, bundle_id, title, version, min_os, platform, size, upload_date, has_icon)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (filename, bundle_id, title, version, min_os, platforms, file_size, upload_date, 1 if has_icon else 0)
+    )
+    
+    conn.commit()
+    print(f"Added {filename} to database")
+
+def export_app_data():
+    conn = sqlite3.connect(DATABASE_PATH)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    
+    cursor.execute("""
+    SELECT * FROM apps ORDER BY upload_date DESC
+    """)
+    
+    apps = []
+    for row in cursor.fetchall():
+        app = dict(row)
+        
+        app['size_formatted'] = format_file_size(app['size'])
+        
+        platform_names = []
+        if app['platform'] & 2:
+            platform_names.append("iPhone")
+        if app['platform'] & 4:
+            platform_names.append("iPad")
+        if app['platform'] & 8:
+            platform_names.append("TV")
+        if app['platform'] & 16:
+            platform_names.append("Watch")
+        
+        app['platform_names'] = platform_names
+        
+        if app['has_icon']:
+            base_name = os.path.splitext(app['filename'])[0]
+            icon_jpg_path = ASSETS_DIR / f"{base_name}.jpg"
+            icon_png_path = ASSETS_DIR / f"{base_name}.png"
+            
+            if os.path.exists(icon_jpg_path):
+                app['icon_path'] = f"assets/app-icons/{base_name}.jpg"
+            elif os.path.exists(icon_png_path):
+                app['icon_path'] = f"assets/app-icons/{base_name}.png"
+        
+        apps.append(app)
+    
+    # Save to JSON file in data directory
+    with open(DATA_DIR / 'ipa_data.json', 'w') as f:
+        json.dump({
+            'apps': apps,
+            'total_count': len(apps),
+            'generated_at': datetime.now().isoformat()
+        }, f, indent=2)
+    
+    # Also save to root directory for easier access
+    with open('ipa_data.json', 'w') as f:
+        json.dump({
+            'apps': apps,
+            'total_count': len(apps),
+            'generated_at': datetime.now().isoformat()
+        }, f, indent=2)
+    
+    print(f"Exported data for {len(apps)} apps to data/ipa_data.json and ipa_data.json")
+    
+    conn.close()
+
+def format_file_size(size_bytes):
+    for unit in ['B', 'KB', 'MB', 'GB']:
+        if size_bytes < 1024 or unit == 'GB':
+            return f"{size_bytes:.2f} {unit}"
+        size_bytes /= 1024
+
+def main():
+    print("\n--- STARTING IPA PROCESSING ---\n")
+    
+    conn, cursor = init_database()
+    
+    ipa_files = list(IPA_DIR.glob('*.ipa'))
+    print(f"Found {len(ipa_files)} IPA files to process")
+    
+    for ipa_file in ipa_files:
+        process_ipa_file(ipa_file, cursor, conn)
+    
+    conn.close()
+    
+    print("\n--- EXPORTING DATA ---\n")
+    export_app_data()
+    
+    print("\n--- PROCESSING COMPLETED ---\n")
+    
+    # List the generated files
+    print("\nGenerated files:")
+    if DATA_DIR.exists():
+        for file in DATA_DIR.glob('*'):
+            print(f" - {file}")
+    
+    if ASSETS_DIR.exists():
+        print("\nGenerated icons:")
+        icons = list(ASSETS_DIR.glob('*'))
+        print(f"Total icons: {len(icons)}")
+        for icon in icons[:5]:  # Show first 5 icons
+            print(f" - {icon}")
+        if len(icons) > 5:
+            print(f" - ... and {len(icons) - 5} more")
+
+if __name__ == "__main__":
+    main()
+EOF
+        python process_ipa.py
         
     - name: Generate file index
       run: |
-        python .github/scripts/generate_index.py
+        cat > generate_index.py << 'EOF'
+#!/usr/bin/env python3
+import os
+import json
+import time
+from datetime import datetime
+
+def get_file_size(file_path):
+    return os.path.getsize(file_path)
+
+def get_file_upload_date(file_path):
+    return datetime.fromtimestamp(os.path.getmtime(file_path)).isoformat()
+
+def generate_index():
+    directories = {
+        "ipa": ".ipa",
+        "deb": ".deb",
+        "dylib": ".dylib"
+    }
+    
+    all_files = []
+    
+    for directory, extension in directories.items():
+        if os.path.exists(directory):
+            print(f"Scanning {directory} directory...")
+            for filename in os.listdir(directory):
+                if filename.lower().endswith(extension):
+                    file_path = os.path.join(directory, filename)
+                    try:
+                        file_size = get_file_size(file_path)
+                        file_upload_date = get_file_upload_date(file_path)
+                        file_mod_time = os.path.getmtime(file_path)
+                        
+                        all_files.append({
+                            "name": filename,
+                            "size": file_size,
+                            "type": directory,
+                            "modified": datetime.fromtimestamp(file_mod_time).strftime("%Y-%m-%d %H:%M:%S"),
+                            "uploaded": file_upload_date,
+                            "url": f"{directory}/{filename}"
+                        })
+                        print(f"  - Added {filename} ({file_size} bytes)")
+                    except Exception as e:
+                        print(f"  - Error processing {filename}: {e}")
+    
+    all_files.sort(key=lambda x: x["uploaded"], reverse=True)
+    
+    index_data = {
+        "files": all_files,
+        "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "total_files": len(all_files),
+        "files_by_type": {
+            "ipa": len([f for f in all_files if f["type"] == "ipa"]),
+            "deb": len([f for f in all_files if f["type"] == "deb"]),
+            "dylib": len([f for f in all_files if f["type"] == "dylib"])
+        }
+    }
+
+    os.makedirs("data", exist_ok=True)
+    with open("data/files_index.json", "w") as f:
+        json.dump(index_data, f, indent=2)
+    
+    with open("files_index.json", "w") as f:
+        json.dump(index_data, f, indent=2)
+    
+    print(f"Generated index with {len(all_files)} files:")
+    print(f"  - IPA files: {index_data['files_by_type']['ipa']}")
+    print(f"  - DEB files: {index_data['files_by_type']['deb']}")
+    print(f"  - DYLIB files: {index_data['files_by_type']['dylib']}")
+
+if __name__ == "__main__":
+    generate_index()
+EOF
+        python generate_index.py
         
-    - name: Upload file index as an artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: file-index
-        path: _data/files_index.json
+    - name: Update script.js to use proper data paths
+      run: |
+        cat > script.js << 'EOF'
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("Document loaded, initializing app...");
+    fetchFiles();
+
+    const searchInput = document.getElementById('searchInput');
+    searchInput.addEventListener('input', filterFiles);
+
+    const filterButtons = document.querySelectorAll('.filter-btn');
+    filterButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            filterButtons.forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+            filterFiles();
+        });
+    });
+});
+
+let archiveStats = {
+    total: { count: 0, size: 0 },
+    ipa: { count: 0, size: 0 },
+    deb: { count: 0, size: 0 },
+    dylib: { count: 0, size: 0 }
+};
+
+let appData = null;
+
+async function fetchFiles() {
+    console.log("Fetching files...");
+    const filesList = document.getElementById('filesList');
+    filesList.innerHTML = '<p class="loading">Loading files...</p>';
+    
+    try {
+        // Try to load enhanced IPA data
+        try {
+            console.log("Attempting to load ipa_data.json...");
+            const ipaDataResponse = await fetch('ipa_data.json');
+            if (ipaDataResponse.ok) {
+                appData = await ipaDataResponse.json();
+                console.log("Successfully loaded enhanced IPA data:", appData);
+            } else {
+                console.warn(`Error loading ipa_data.json: ${ipaDataResponse.status}`);
+            }
+        } catch (err) {
+            console.warn("Could not load enhanced IPA data:", err);
+        }
         
-    - name: Upload IPA data as an artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: ipa-data
-        path: _data/ipa_data.json
+        // Load the file index
+        console.log("Fetching files_index.json...");
+        const indexResponse = await fetch('files_index.json');
+        
+        if (indexResponse.ok) {
+            const indexData = await indexResponse.json();
+            console.log("Successfully loaded files_index.json");
+            calculateStats(indexData.files);
+            displayFiles(indexData.files);
+            return;
+        } else {
+            console.warn(`Error loading files_index.json: ${indexResponse.status}`);
+        }
+        
+        console.log("Falling back to directory scanning...");
+        const directories = ['ipa', 'deb', 'dylib'];
+        let allFiles = [];
+        
+        for (const dir of directories) {
+            try {
+                console.log(`Checking directory: ${dir}`);
+                if (document.location.hostname === "localhost" || document.location.hostname === "127.0.0.1") {
+                    // For local testing
+                    const response = await fetch(`${dir}/`);
+                    if (response.ok) {
+                        // Parse directory listing HTML (simple approach, not robust)
+                        const html = await response.text();
+                        const fileMatches = html.match(/href="([^"]+\.(ipa|deb|dylib))"/g) || [];
+                        
+                        const files = fileMatches.map(match => {
+                            const filename = match.match(/href="([^"]+)"/)[1];
+                            return {
+                                name: filename,
+                                type: dir,
+                                size: 0,
+                                uploaded: new Date().toISOString(),
+                                url: `${dir}/${filename}`
+                            };
+                        });
+                        
+                        allFiles = allFiles.concat(files);
+                    }
+                } else {
+                    // For GitHub Pages
+                    try {
+                        const response = await fetch(`https://api.github.com/repos/andres9890/ipa-archive/contents/${dir}`);
+                        
+                        if (response.ok) {
+                            const files = await response.json();
+                            
+                            if (Array.isArray(files)) {
+                                const validFiles = files.filter(file => {
+                                    const extension = file.name.split('.').pop().toLowerCase();
+                                    return extension === dir;
+                                });
+                                
+                                console.log(`Found ${validFiles.length} files in ${dir} directory`);
+                                allFiles = allFiles.concat(validFiles.map(file => ({
+                                    ...file,
+                                    type: dir,
+                                    uploadDate: new Date(),
+                                    size: file.size || 0
+                                })));
+                            }
+                        }
+                    } catch (error) {
+                        console.warn(`Error fetching ${dir} directory:`, error);
+                    }
+                }
+            } catch (error) {
+                console.warn(`Error checking ${dir} directory:`, error);
+            }
+        }
+        
+        if (allFiles.length > 0) {
+            console.log(`Total files found through directory scanning: ${allFiles.length}`);
+            calculateStats(allFiles);
+            displayFiles(allFiles);
+        } else {
+            console.warn("No files found through any method");
+            filesList.innerHTML = '<p class="no-files">No files found. Upload some files to get started!</p>';
+            updateStatsDisplay('all');
+        }
+        
+    } catch (error) {
+        console.error('Error fetching files:', error);
+        filesList.innerHTML = `
+            <p class="no-files">
+                Unable to load files. This might happen if the repository was just created or if the directories don't exist yet.
+                <br><br>
+                Please create the ipa, deb, and dylib directories and add some files to get started.
+            </p>
+        `;
+        updateStatsDisplay('all');
+    }
+}
+
+function calculateStats(files) {
+    archiveStats = {
+        total: { count: 0, size: 0 },
+        ipa: { count: 0, size: 0 },
+        deb: { count: 0, size: 0 },
+        dylib: { count: 0, size: 0 }
+    };
+    
+    files.forEach(file => {
+        const fileType = file.type.toLowerCase();
+        const fileSize = parseInt(file.size) || 0;
+        
+        if (archiveStats[fileType]) {
+            archiveStats[fileType].count++;
+            archiveStats[fileType].size += fileSize;
+        }
+        
+        archiveStats.total.count++;
+        archiveStats.total.size += fileSize;
+    });
+    
+    updateStatsDisplay('all');
+}
+
+function updateStatsDisplay(filterType) {
+    const totalFilesCountElement = document.getElementById('totalFilesCount');
+    const totalArchiveSizeElement = document.getElementById('totalArchiveSize');
+    
+    const stats = filterType === 'all' ? archiveStats.total : archiveStats[filterType] || { count: 0, size: 0 };
+    
+    totalFilesCountElement.textContent = stats.count;
+    totalArchiveSizeElement.textContent = formatFileSize(stats.size);
+}
+
+function formatFileSize(bytes) {
+    if (bytes === 0) return "0 Bytes";
+    
+    const units = ["Bytes", "KB", "MB", "GB", "TB"];
+    const decimals = 2;
+    const k = 1024;
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(decimals)) + " " + units[i];
+}
+
+function displayFiles(files) {
+    console.log(`Displaying ${files.length} files...`);
+    const filesList = document.getElementById('filesList');
+    filesList.innerHTML = '';
+    
+    if (files.length === 0) {
+        filesList.innerHTML = '<p class="no-files">No files found. Upload some files to get started!</p>';
+        updateStatsDisplay('all');
+        return;
+    }
+    
+    files.sort((a, b) => {
+        const dateA = new Date(a.uploaded || a.modified || 0);
+        const dateB = new Date(b.uploaded || b.modified || 0);
+        
+        if (dateA.getTime() === dateB.getTime()) {
+            return a.name.localeCompare(b.name);
+        }
+        
+        return dateB - dateA;
+    });
+    
+    files.forEach(file => {
+        const fileElement = createFileElement(file);
+        filesList.appendChild(fileElement);
+    });
+}
+
+function getAppDataForFile(filename) {
+    if (!appData || !appData.apps) {
+        return null;
+    }
+    
+    const app = appData.apps.find(app => app.filename === filename);
+    if (app) {
+        console.log(`Found metadata for ${filename}:`, app);
+    }
+    return app;
+}
+
+function createFileElement(file) {
+    const fileItem = document.createElement('div');
+    fileItem.className = 'file-item';
+    fileItem.dataset.filename = file.name.toLowerCase();
+    fileItem.dataset.filetype = file.type.toLowerCase();
+    
+    const enhancedData = file.type === 'ipa' ? getAppDataForFile(file.name) : null;
+    
+    const sizeInKB = file.size / 1024;
+    const sizeInMB = sizeInKB / 1024;
+    const formattedSize = enhancedData?.size_formatted || 
+        (sizeInMB >= 1 ? `${sizeInMB.toFixed(2)} MB` : `${sizeInKB.toFixed(2)} KB`);
+    
+    const uploadDate = file.uploaded || file.modified
+        ? new Date(file.uploaded || file.modified).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+          })
+        : 'Unknown date';
+    
+    const downloadUrl = `${file.type}/${file.name}`;
+    
+    const fileTypeLabel = file.type.toUpperCase();
+    
+    if (!enhancedData) {
+        console.log(`Using basic display for ${file.name}`);
+        fileItem.innerHTML = `
+            <div class="file-name">
+                <span class="file-type-tag file-type-${file.type}">${fileTypeLabel}</span>
+                ${file.name}
+            </div>
+            <div class="file-info">
+                <p>Size: ${formattedSize}</p>
+                <p>Uploaded: ${uploadDate}</p>
+            </div>
+            <a href="${downloadUrl}" class="download-btn" download>Download</a>
+        `;
+        return fileItem;
+    }
+    
+    console.log(`Using enhanced display for ${file.name}`);
+    const appTitle = enhancedData.title || file.name.replace('.ipa', '');
+    const appVersion = enhancedData.version || 'Unknown';
+    const bundleId = enhancedData.bundle_id || 'Unknown';
+    const minOS = enhancedData.min_os || 'Unknown';
+    const platforms = enhancedData.platform_names?.join(', ') || 'Unknown';
+    const iconPath = enhancedData.icon_path || '';
+    
+    if (iconPath) {
+        console.log(`App has icon: ${iconPath}`);
+    }
+    
+    fileItem.classList.add('enhanced');
+    fileItem.innerHTML = `
+        <div class="app-header">
+            ${iconPath ? `<img src="${iconPath}" class="app-icon" alt="${appTitle} icon" onerror="this.style.display='none'">` : ''}
+            <div class="app-title-container">
+                <h3 class="app-title">${appTitle}</h3>
+                <span class="app-version">v${appVersion}</span>
+            </div>
+        </div>
+        <div class="app-info">
+            <p><strong>Bundle ID:</strong> ${bundleId}</p>
+            <p><strong>Min iOS:</strong> ${minOS}</p>
+            <p><strong>Platforms:</strong> ${platforms}</p>
+            <p><strong>Size:</strong> ${formattedSize}</p>
+            <p><strong>Uploaded:</strong> ${uploadDate}</p>
+        </div>
+        <a href="${downloadUrl}" class="download-btn" download>Download IPA</a>
+    `;
+    
+    return fileItem;
+}
+
+function filterFiles() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const activeFilterBtn = document.querySelector('.filter-btn.active');
+    const fileTypeFilter = activeFilterBtn ? activeFilterBtn.dataset.type : 'all';
+    
+    updateStatsDisplay(fileTypeFilter);
+    
+    const fileItems = document.querySelectorAll('.file-item');
+    let visibleCount = 0;
+    
+    fileItems.forEach(item => {
+        const fileName = item.dataset.filename;
+        const fileType = item.dataset.filetype;
+        
+        const matchesSearch = fileName.includes(searchTerm) || 
+                             (item.textContent && item.textContent.toLowerCase().includes(searchTerm));
+        const matchesType = fileTypeFilter === 'all' || fileType === fileTypeFilter;
+        
+        if (matchesSearch && matchesType) {
+            item.style.display = 'block';
+            visibleCount++;
+        } else {
+            item.style.display = 'none';
+        }
+    });
+    
+    const noFilesMessage = document.querySelector('.no-files-message');
+    
+    if (visibleCount === 0) {
+        if (!noFilesMessage) {
+            const message = document.createElement('p');
+            message.className = 'no-files no-files-message';
+            message.textContent = 'No files match your search criteria.';
+            document.getElementById('filesList').appendChild(message);
+        }
+    } else if (noFilesMessage) {
+        noFilesMessage.remove();
+    }
+}
+EOF
+        
+    - name: List files after processing
+      run: |
+        echo "Repository contents after processing:"
+        ls -la
+        find . -type f -name "*.json" | xargs ls -la
+        find . -type d | sort
+        
+    - name: Commit and push if there are changes
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add ipa_data.json files_index.json data/ assets/
+        git commit -m "Update processed IPA data" || echo "No changes to commit"
+        git push
