@@ -48,7 +48,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: file-index
-        path: _data/files_index.json
+        path: data/files_index.json
         
     - name: Upload IPA data as an artifact
       uses: actions/upload-artifact@v4
