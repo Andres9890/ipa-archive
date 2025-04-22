@@ -33,7 +33,7 @@ jobs:
         mkdir -p ipa
         mkdir -p deb
         mkdir -p dylib
-        mkdir -p data
+        mkdir -p _data
         mkdir -p assets/app-icons
         
     - name: Process IPA files
@@ -48,7 +48,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: file-index
-        path: data/files_index.json
+        path: _data/files_index.json
         
     - name: Upload IPA data as an artifact
       uses: actions/upload-artifact@v4
