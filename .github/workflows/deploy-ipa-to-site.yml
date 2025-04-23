@@ -50,14 +50,14 @@ jobs:
         echo "↪ After generate_index.py, _data contains:"
         ls -R _data || echo "  (empty or missing)"
 
-    - name: Upload file index as an artifact
+    - name: Upload _data directory as an artifact
       uses: actions/upload-artifact@v4
       with:
-        name: file-index
-        path: _data/files_index.json
+        name: data-directory
+        path: _data/
 
-    - name: Upload IPA data as an artifact
+    - name: Upload assets directory as an artifact
       uses: actions/upload-artifact@v4
       with:
-        name: ipa-data
-        path: _data/ipa_data.json
+        name: assets-directory
+        path: assets/
