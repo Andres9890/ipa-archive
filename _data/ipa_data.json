@@ -1,0 +1,129 @@
+{
+  "apps": [
+    {
+      "id": 6,
+      "filename": "esign_5.0.2_unsigned.ipa",
+      "bundle_id": "p3.xyz.yyyue.esign",
+      "title": "ESign",
+      "version": "5.0.2 (1)",
+      "min_os": "11.0",
+      "platform": 6,
+      "size": 7522792,
+      "upload_date": "2025-04-23T09:55:51.494124",
+      "has_icon": 1,
+      "size_formatted": "7.17 MB",
+      "platform_names": [
+        "iPhone",
+        "iPad"
+      ],
+      "icon_path": "assets/app-icons/esign_5.0.2_unsigned.png"
+    },
+    {
+      "id": 1,
+      "filename": "Talking Tom v1.0 iOS3.0 C.ipa",
+      "bundle_id": "com.outfit7.talkingtom",
+      "title": "Talking Tom",
+      "version": "1.0",
+      "min_os": "3.0",
+      "platform": 2,
+      "size": 14545957,
+      "upload_date": "2025-04-23T09:55:51.476124",
+      "has_icon": 1,
+      "size_formatted": "13.87 MB",
+      "platform_names": [
+        "iPhone"
+      ],
+      "icon_path": "assets/app-icons/Talking Tom v1.0 iOS3.0 C.jpg"
+    },
+    {
+      "id": 2,
+      "filename": "StosVPN v1.0.ipa",
+      "bundle_id": "com.stossy11.StosVPN",
+      "title": "StosVPN",
+      "version": "1.0 (2)",
+      "min_os": "16.0",
+      "platform": 6,
+      "size": 180866,
+      "upload_date": "2025-04-23T09:55:51.423123",
+      "has_icon": 1,
+      "size_formatted": "176.63 KB",
+      "platform_names": [
+        "iPhone",
+        "iPad"
+      ],
+      "icon_path": "assets/app-icons/StosVPN v1.0.jpg"
+    },
+    {
+      "id": 4,
+      "filename": "StikJit_1.2.ipa",
+      "bundle_id": "com.stik.sj",
+      "title": "StikJIT",
+      "version": "1.2 (1)",
+      "min_os": "17.4",
+      "platform": 6,
+      "size": 5922690,
+      "upload_date": "2025-04-23T09:55:51.422123",
+      "has_icon": 1,
+      "size_formatted": "5.65 MB",
+      "platform_names": [
+        "iPhone",
+        "iPad"
+      ],
+      "icon_path": "assets/app-icons/StikJit_1.2.png"
+    },
+    {
+      "id": 5,
+      "filename": "Filza_NoURLScheme_4.0.2 (trollstore).ipa",
+      "bundle_id": "com.tigisoftware.Filza000",
+      "title": "Filza",
+      "version": "4.0 (2)",
+      "min_os": "9.0",
+      "platform": 6,
+      "size": 13893015,
+      "upload_date": "2025-04-23T09:55:51.412123",
+      "has_icon": 1,
+      "size_formatted": "13.25 MB",
+      "platform_names": [
+        "iPhone",
+        "iPad"
+      ],
+      "icon_path": "assets/app-icons/Filza_NoURLScheme_4.0.2 (trollstore).png"
+    },
+    {
+      "id": 3,
+      "filename": "AmberDraw v1.4.0.ipa",
+      "bundle_id": "com.afterhours.amberdraw",
+      "title": "AmberDraw",
+      "version": "1.4.0 (52)",
+      "min_os": "16.4",
+      "platform": 2,
+      "size": 14525514,
+      "upload_date": "2025-04-23T09:55:51.370123",
+      "has_icon": 1,
+      "size_formatted": "13.85 MB",
+      "platform_names": [
+        "iPhone"
+      ],
+      "icon_path": "assets/app-icons/AmberDraw v1.4.0.jpg"
+    },
+    {
+      "id": 7,
+      "filename": "AA Talking Patrick Star v1.6 Cracked.ipa",
+      "bundle_id": "com.doubleaapps.aatalkingpa",
+      "title": "Patrick",
+      "version": "1.6",
+      "min_os": "3.0",
+      "platform": 2,
+      "size": 7312174,
+      "upload_date": "2025-04-23T09:55:51.347123",
+      "has_icon": 1,
+      "size_formatted": "6.97 MB",
+      "platform_names": [
+        "iPhone"
+      ],
+      "icon_path": "assets/app-icons/AA Talking Patrick Star v1.6 Cracked.jpg"
+    }
+  ],
+  "total_count": 7,
+  "generated_at": "2025-04-23T09:55:53.647615"
+}
