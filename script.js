@@ -38,7 +38,8 @@ async function fetchFiles() {
             console.warn('Could not load enhanced IPA data:', err);
         }
         
-        const indexResponse = await fetch('files_index.json');
+        // Changed path here - this is the main fix
+        const indexResponse = await fetch('_data/files_index.json');
         
         if (indexResponse.ok) {
             const indexData = await indexResponse.json();
