@@ -50,6 +50,27 @@ jobs:
         echo "↪ After generate_index.py, _data contains:"
         ls -R _data || echo "  (empty or missing)"
 
+    - name: Configure Git
+      run: |
+        git config --global user.name "GitHub Actions"
+        git config --global user.email "actions@github.com"
+        
+    - name: Commit and push changes
+      run: |
+        # Check if there are changes to commit
+        if git diff --quiet && git diff --staged --quiet; then
+          echo "No changes to commit"
+        else
+          # Add changes to git
+          git add _data/ assets/ ipa/ deb/ dylib/
+          
+          # Commit changes
+          git commit -m "Update archives [automated]"
+          
+          # Push changes
+          git push origin main
+        fi
+
     - name: Upload _data directory as an artifact
       uses: actions/upload-artifact@v4
       with:
