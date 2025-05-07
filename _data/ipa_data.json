@@ -1,6 +1,41 @@
 {
   "apps": [
     {
+      "id": 8,
+      "filename": "MyCalculatorClient v1.0.6.ipa",
+      "bundle_id": "com.iCalculator.client.app",
+      "title": "iCalculator",
+      "version": "1.0.6 (7)",
+      "min_os": "13.0",
+      "platform": 6,
+      "size": 14767524,
+      "upload_date": "2025-05-07T00:46:04.150959",
+      "has_icon": 1,
+      "size_formatted": "14.08 MB",
+      "platform_names": [
+        "iPhone",
+        "iPad"
+      ],
+      "icon_path": "assets/app-icons/MyCalculatorClient v1.0.6.png"
+    },
+    {
+      "id": 9,
+      "filename": "I Am Rich v1.0.ipa",
+      "bundle_id": "9C48YYZAC5.IAmRich",
+      "title": "I Am Rich",
+      "version": "1.0",
+      "min_os": "",
+      "platform": 2,
+      "size": 94302,
+      "upload_date": "2025-05-07T00:46:04.113959",
+      "has_icon": 1,
+      "size_formatted": "92.09 KB",
+      "platform_names": [
+        "iPhone"
+      ],
+      "icon_path": "assets/app-icons/I Am Rich v1.0.jpg"
+    },
+    {
       "id": 6,
       "filename": "esign_5.0.2_unsigned.ipa",
       "bundle_id": "p3.xyz.yyyue.esign",
@@ -124,6 +159,6 @@
       "icon_path": "assets/app-icons/AA Talking Patrick Star v1.6 Cracked.jpg"
     }
   ],
-  "total_count": 7,
-  "generated_at": "2025-04-23T09:55:53.647615"
+  "total_count": 9,
+  "generated_at": "2025-05-07T00:46:06.719269"
 }
