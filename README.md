@@ -1,4 +1,4 @@
-### https://andres9890.github.io/ipa-archive/
+### https://ipa.backupbot.net/
 -----------------------------------------------
 pretty simple IPA/DEB/DYLIB archive
 
