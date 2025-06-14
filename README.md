@@ -1,4 +1,4 @@
-### https://ipa.backupbot.net/
+### https://ios.backupbot.net/
 -----------------------------------------------
 pretty simple IPA/DEB/DYLIB archive
 
