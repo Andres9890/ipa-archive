@@ -4,7 +4,7 @@
       "name": "com.booleanmagic.displayrecorder_1.3.20_iphoneos-arm.deb",
       "size": 920070,
       "type": "deb",
-      "modified": "2025-05-22 19:19:11",
+      "modified": "2025-06-14 21:57:05",
       "uploaded": "2025-05-09T00:37:03+03:00",
       "url": "deb/com.booleanmagic.displayrecorder_1.3.20_iphoneos-arm.deb"
     },
@@ -12,7 +12,7 @@
       "name": "I Am Rich v1.0.ipa",
       "size": 94302,
       "type": "ipa",
-      "modified": "2025-05-22 19:19:11",
+      "modified": "2025-06-14 21:57:05",
       "uploaded": "2025-05-07T03:41:30+03:00",
       "url": "ipa/I Am Rich v1.0.ipa"
     },
@@ -20,7 +20,7 @@
       "name": "MyCalculatorClient v1.0.6.ipa",
       "size": 14767524,
       "type": "ipa",
-      "modified": "2025-05-22 19:19:11",
+      "modified": "2025-06-14 21:57:05",
       "uploaded": "2025-04-27T03:17:53+03:00",
       "url": "ipa/MyCalculatorClient v1.0.6.ipa"
     },
@@ -28,55 +28,55 @@
       "name": "Filza_NoURLScheme_4.0.2 (trollstore).ipa",
       "size": 13893015,
       "type": "ipa",
-      "modified": "2025-05-22 19:19:11",
+      "modified": "2025-06-14 21:57:05",
       "uploaded": "2025-04-22T19:12:29+03:00",
       "url": "ipa/Filza_NoURLScheme_4.0.2 (trollstore).ipa"
-    },
-    {
-      "name": "com.tigisoftware.filza_4.0.1-2_iphoneos-arm.deb",
-      "size": 13929994,
-      "type": "deb",
-      "modified": "2025-05-22 19:19:11",
-      "uploaded": "2025-04-22T19:09:41+03:00",
-      "url": "deb/com.tigisoftware.filza_4.0.1-2_iphoneos-arm.deb"
     },
     {
       "name": "com.tigisoftware.filza_4.0.1-2_iphoneos-arm64.deb",
       "size": 13930160,
       "type": "deb",
-      "modified": "2025-05-22 19:19:11",
+      "modified": "2025-06-14 21:57:05",
       "uploaded": "2025-04-22T19:09:41+03:00",
       "url": "deb/com.tigisoftware.filza_4.0.1-2_iphoneos-arm64.deb"
+    },
+    {
+      "name": "com.tigisoftware.filza_4.0.1-2_iphoneos-arm.deb",
+      "size": 13929994,
+      "type": "deb",
+      "modified": "2025-06-14 21:57:05",
+      "uploaded": "2025-04-22T19:09:41+03:00",
+      "url": "deb/com.tigisoftware.filza_4.0.1-2_iphoneos-arm.deb"
     },
     {
       "name": "Talking Tom v1.0 iOS3.0 C.ipa",
       "size": 14545957,
       "type": "ipa",
-      "modified": "2025-05-22 19:19:11",
+      "modified": "2025-06-14 21:57:05",
       "uploaded": "2025-04-21T21:48:09+03:00",
       "url": "ipa/Talking Tom v1.0 iOS3.0 C.ipa"
-    },
-    {
-      "name": "ai.akemi.appsyncunified_116.0_iphoneos-arm.akemi-git-235aca6cddfbdc9fa87fcb5b2aec2df37ed6d65a.deb",
-      "size": 51658,
-      "type": "deb",
-      "modified": "2025-05-22 19:19:11",
-      "uploaded": "2025-04-21T21:02:57+03:00",
-      "url": "deb/ai.akemi.appsyncunified_116.0_iphoneos-arm.akemi-git-235aca6cddfbdc9fa87fcb5b2aec2df37ed6d65a.deb"
     },
     {
       "name": "ai.akemi.appsyncunified_116.0_iphoneos-arm64.akemi-git-235aca6cddfbdc9fa87fcb5b2aec2df37ed6d65a.deb",
       "size": 49472,
       "type": "deb",
-      "modified": "2025-05-22 19:19:11",
+      "modified": "2025-06-14 21:57:05",
       "uploaded": "2025-04-21T21:02:57+03:00",
       "url": "deb/ai.akemi.appsyncunified_116.0_iphoneos-arm64.akemi-git-235aca6cddfbdc9fa87fcb5b2aec2df37ed6d65a.deb"
+    },
+    {
+      "name": "ai.akemi.appsyncunified_116.0_iphoneos-arm.akemi-git-235aca6cddfbdc9fa87fcb5b2aec2df37ed6d65a.deb",
+      "size": 51658,
+      "type": "deb",
+      "modified": "2025-06-14 21:57:05",
+      "uploaded": "2025-04-21T21:02:57+03:00",
+      "url": "deb/ai.akemi.appsyncunified_116.0_iphoneos-arm.akemi-git-235aca6cddfbdc9fa87fcb5b2aec2df37ed6d65a.deb"
     },
     {
       "name": "AmberDraw v1.4.0.ipa",
       "size": 14525514,
       "type": "ipa",
-      "modified": "2025-05-22 19:19:11",
+      "modified": "2025-06-14 21:57:05",
       "uploaded": "2025-04-17T17:15:52+03:00",
       "url": "ipa/AmberDraw v1.4.0.ipa"
     },
@@ -84,7 +84,7 @@
       "name": "NoAds.dylib",
       "size": 842624,
       "type": "dylib",
-      "modified": "2025-05-22 19:19:11",
+      "modified": "2025-06-14 21:57:05",
       "uploaded": "2025-04-17T17:03:43+03:00",
       "url": "dylib/NoAds.dylib"
     },
@@ -92,7 +92,7 @@
       "name": "ADsBlocker.dylib",
       "size": 137712,
       "type": "dylib",
-      "modified": "2025-05-22 19:19:11",
+      "modified": "2025-06-14 21:57:05",
       "uploaded": "2025-04-17T16:52:01+03:00",
       "url": "dylib/ADsBlocker.dylib"
     },
@@ -100,7 +100,7 @@
       "name": "ws.hbang.newterm2_2.5_iphoneos-arm.deb",
       "size": 2017880,
       "type": "deb",
-      "modified": "2025-05-22 19:19:11",
+      "modified": "2025-06-14 21:57:05",
       "uploaded": "2025-04-17T16:49:21+03:00",
       "url": "deb/ws.hbang.newterm2_2.5_iphoneos-arm.deb"
     },
@@ -108,7 +108,7 @@
       "name": "trollstore lite.deb",
       "size": 3660,
       "type": "deb",
-      "modified": "2025-05-22 19:19:11",
+      "modified": "2025-06-14 21:57:05",
       "uploaded": "2025-04-17T16:47:25+03:00",
       "url": "deb/trollstore lite.deb"
     },
@@ -116,7 +116,7 @@
       "name": "AA Talking Patrick Star v1.6 Cracked.ipa",
       "size": 7312174,
       "type": "ipa",
-      "modified": "2025-05-22 19:19:11",
+      "modified": "2025-06-14 21:57:05",
       "uploaded": "2025-04-17T14:10:12+03:00",
       "url": "ipa/AA Talking Patrick Star v1.6 Cracked.ipa"
     },
@@ -124,7 +124,7 @@
       "name": "StosVPN v1.0.ipa",
       "size": 180866,
       "type": "ipa",
-      "modified": "2025-05-22 19:19:11",
+      "modified": "2025-06-14 21:57:05",
       "uploaded": "2025-04-17T14:04:58+03:00",
       "url": "ipa/StosVPN v1.0.ipa"
     },
@@ -132,7 +132,7 @@
       "name": "StikJit_1.2.ipa",
       "size": 5922690,
       "type": "ipa",
-      "modified": "2025-05-22 19:19:11",
+      "modified": "2025-06-14 21:57:05",
       "uploaded": "2025-04-17T13:55:26+03:00",
       "url": "ipa/StikJit_1.2.ipa"
     },
@@ -140,12 +140,12 @@
       "name": "esign_5.0.2_unsigned.ipa",
       "size": 7522792,
       "type": "ipa",
-      "modified": "2025-05-22 19:19:11",
+      "modified": "2025-06-14 21:57:05",
       "uploaded": "2025-04-17T13:24:52+03:00",
       "url": "ipa/esign_5.0.2_unsigned.ipa"
     }
   ],
-  "generated_at": "2025-05-22 19:19:14",
+  "generated_at": "2025-06-14 21:57:12",
   "total_files": 18,
   "files_by_type": {
     "ipa": 9,
